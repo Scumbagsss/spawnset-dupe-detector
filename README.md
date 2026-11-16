@@ -60,3 +60,5 @@ The architecture discusses temporal event processing, failure modes, stateful ca
 The private implementation is not available for independent review. Synthetic examples are not real-player evidence. An automated alert is a signal for human investigation—not proof of misconduct.
 
 **Author:** [Scumbagsss](https://github.com/Scumbagsss) · Python backend / automation
+
+**Contact:** Discord — `scumbagsss` · Telegram — [@dilarion](https://t.me/dilarion).
