@@ -1,28 +1,47 @@
-# Architecture
+# Architecture — activity investigation
 
-## Purpose
+## Scope and trust boundary
 
-Advanced DayZ SpawnSet abuse detector with confidence scoring, case management and recovery monitoring.
+This document describes the **conceptual architecture** of a private moderation subsystem. Public code intentionally excludes the proprietary rule engine, scoring parameters and server adapters. The interface in `src/public_interface.py` is an architectural sketch, **not** an implementation.
 
-## Boundary
+## Layers
 
-The public repository documents only the system boundary. The production edition contains private implementation details, persistence schemas, operational thresholds, adapters, credentials and deployment configuration.
+1. **Ingestion & parsing:** consume server log batches and translate them into normalized events. Avoid treating raw text as a stable schema.
+2. **Timeline construction:** order events by time and subject. Keep enough source context for staff to trace an alert back to its origin.
+3. **Candidate analysis:** inspect related events in configurable time windows. Correlation is evidence for investigation, not an automatic verdict.
+4. **Private confidence model:** attach contextual scoring and explanatory evidence to a case. Thresholds and actual algorithms remain private.
+5. **Case persistence:** store case state, review history and references in a database.
+6. **Discord/staff adapter:** present actionable summaries and updates without revealing sensitive logs to unauthorized users.
 
-## Components
+```mermaid
+sequenceDiagram
+    participant Log as Activity source
+    participant Parse as Parser
+    participant Analysis as Analyzer
+    participant Case as Case store
+    participant Staff as Staff view
+    Log->>Parse: Batch of records
+    Parse->>Analysis: Normalized events
+    Analysis->>Case: Candidate evidence
+    Case-->>Staff: Case summary
+    Staff->>Case: Review / change state
+```
 
-- **Discord interaction layer** — buttons, forms, commands and/or event listeners.
-- **Domain service layer** — validates state and executes the project-specific workflow.
-- **Persistence/integration layer** — private production storage and external adapters.
-- **Observability layer** — staff logs, error handling and operational feedback.
+## Failure and quality considerations
 
-## Workflow
+- **Duplicate batches:** a retry or backfill should not create multiple identical cases.
+- **Out-of-order timestamps:** compare normalized event times, not arrival order alone.
+- **Missing identifiers:** preserve uncertainty instead of inventing associations.
+- **False positives:** keep manual review as a deliberate part of the workflow.
+- **Sensitive evidence:** minimize storage and redact player identifiers in demonstrations.
+- **Restart recovery:** processing cursors and review state need a durable representation.
 
-1. Ingest player activity batch
-2. Build normalized player timeline
-3. Evaluate suspicious relationships and cycles
-4. Calculate private confidence model
-5. Open/update moderation case
+## Verification
 
-## Why the implementation is private
+A private source archive reviewed on 16 November 2026 included a distinct `services/spawnset_dupe/` package and 27 tests under `tests_spawnset_dupe/`; all 27 passed in a local run. This is evidence about the reviewed archive, **not** a test result for the public skeleton.
 
-The production code is a commercial/private implementation. The portfolio edition intentionally prevents direct deployment while still documenting the engineering scope.
+## Public/private separation
+
+Public: system boundaries, problem statement, conceptual flow, non-runnable interface and synthetic examples.
+
+Private: production parsers, thresholds, detector rules, database schema, operational secrets, Discord identifiers and real game logs.
